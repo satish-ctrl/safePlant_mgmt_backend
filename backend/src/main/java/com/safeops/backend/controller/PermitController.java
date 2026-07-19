@@ -1,7 +1,7 @@
 package com.safeops.backend.controller;
 
 import com.safeops.backend.dto.request.PermitCheckRequest;
-import com.safeops.backend.service.ModelClientService;
+import com.safeops.backend.service.ModelProxyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -18,7 +18,7 @@ import java.util.Map;
 @Tag(name = "Permits", description = "Work permit conflict checking endpoints")
 public class PermitController {
 
-    private final ModelClientService modelClientService;
+    private final ModelProxyService modelClientService;
 
     @PostMapping("/check")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")

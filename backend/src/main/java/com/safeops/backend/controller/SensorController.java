@@ -1,7 +1,7 @@
 package com.safeops.backend.controller;
 
 import com.safeops.backend.dto.request.SensorRequest;
-import com.safeops.backend.service.ModelClientService;
+import com.safeops.backend.service.ModelProxyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -18,7 +18,7 @@ import java.util.Map;
 @Tag(name = "Sensor", description = "Sensor anomaly detection endpoints")
 public class SensorController {
 
-    private final ModelClientService modelClientService;
+    private final ModelProxyService modelClientService;
 
     @PostMapping("/anomaly")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")

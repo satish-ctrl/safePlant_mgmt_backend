@@ -21,20 +21,6 @@ services:
     networks:
       - safeops-net
 
-  # ─── Redis Cache ──────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: safeops-redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - safeops-net
-
   # ─── Python FastAPI Model Service ─────────────────────────────────
   model-service:
     build:
@@ -71,8 +57,6 @@ services:
       DB_NAME: ${DB_NAME:-safeops}
       DB_USERNAME: ${DB_USERNAME:-safeops}
       DB_PASSWORD: ${DB_PASSWORD:-safeops_secret}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       MODEL_SERVICE_HOST: model-service
       MODEL_SERVICE_PORT: 8000
       JWT_SECRET: ${JWT_SECRET:-dGhpcyBpcyBhIHZlcnkgc2VjcmV0IGtleSBmb3IgSldUIHRva2VucyBpbiBTYWZlT3BzIEFJIGJhY2tlbmQ=}
@@ -81,8 +65,6 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       model-service:
         condition: service_healthy

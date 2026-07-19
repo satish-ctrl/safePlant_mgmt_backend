@@ -9,10 +9,11 @@ import com.safeops.backend.repository.AnalysisJobRepository;
 import com.safeops.backend.repository.InvocationLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -24,10 +25,9 @@ import java.util.UUID;
 @Slf4j
 public class AnalysisService {
 
-    private final ModelClientService modelClientService;
+    private final SafetyService safetyService;
     private final AnalysisJobRepository analysisJobRepository;
     private final InvocationLogRepository invocationLogRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
     /**
@@ -37,7 +37,7 @@ public class AnalysisService {
     public String submitAnalysis(AnalysisRequest request, Long userId) {
         String jobId = UUID.randomUUID().toString();
 
-        Map<String, Object> requestMap = objectMapper.convertValue(request, Map.class);
+        Map<String, Object> requestMap = objectMapper.convertValue(request, new TypeReference<>() {});
 
         AnalysisJob job = AnalysisJob.builder()
                 .jobId(jobId)
@@ -58,12 +58,6 @@ public class AnalysisService {
      * Retrieves the current status and results of an analysis job.
      */
     public JobStatusResponse getJobStatus(String jobId) {
-        // Check Redis cache first
-        Object cached = redisTemplate.opsForValue().get("job:" + jobId);
-        if (cached != null) {
-            return objectMapper.convertValue(cached, JobStatusResponse.class);
-        }
-
         AnalysisJob job = analysisJobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
 
@@ -76,11 +70,6 @@ public class AnalysisService {
                 .completedAt(job.getCompletedAt())
                 .latencyMs(job.getLatencyMs())
                 .build();
-
-        // Cache completed results for 5 minutes
-        if ("COMPLETED".equals(job.getStatus()) || "FAILED".equals(job.getStatus())) {
-            redisTemplate.opsForValue().set("job:" + jobId, response, Duration.ofMinutes(5));
-        }
 
         return response;
     }
@@ -108,7 +97,13 @@ public class AnalysisService {
                     "active_permits_raw", request.getActivePermitsRaw() != null ? request.getActivePermitsRaw() : java.util.List.of()
             );
 
-            Map<String, Object> result = modelClientService.runFullAnalysis(modelRequest);
+            Map<String, Object> result = safetyService.evaluateSafety(modelRequest)
+                    .timeout(Duration.ofSeconds(20))
+                    .block();
+
+            if (result == null) {
+                throw new IllegalStateException("Safety engine returned an empty response");
+            }
 
             long latencyMs = System.currentTimeMillis() - startTime;
 

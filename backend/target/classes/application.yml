@@ -6,29 +6,20 @@ spring:
     name: safeops-backend
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:safeops}
-    username: ${DB_USERNAME:safeops}
-    password: ${DB_PASSWORD:safeops_secret}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:safeOps_DB}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:Shikha@123}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
-
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
 
   jackson:
     serialization:
@@ -39,45 +30,25 @@ safeops:
   model-service:
     base-url: http://${MODEL_SERVICE_HOST:localhost}:${MODEL_SERVICE_PORT:8000}
     timeout-seconds: 15
+  safety-engine:
+    base-url: ${SAFETY_ENGINE_BASE_URL:https://monkey3770-safeops-ai-engine.hf.space}
+    timeout-seconds: ${SAFETY_ENGINE_TIMEOUT_SECONDS:20}
+  simulator:
+    fixed-delay-ms: ${SENSOR_SIMULATOR_FIXED_DELAY_MS:5000}
   jwt:
     secret: ${JWT_SECRET:dGhpcyBpcyBhIHZlcnkgc2VjcmV0IGtleSBmb3IgSldUIHRva2VucyBpbiBTYWZlT3BzIEFJIGJhY2tlbmQ=}
     access-token-expiration-ms: 3600000    # 1 hour
     refresh-token-expiration-ms: 86400000  # 24 hours
-
-# Resilience4j config
-resilience4j:
-  retry:
-    instances:
-      modelService:
-        max-attempts: 3
-        wait-duration: 500ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
-        retry-exceptions:
-          - org.springframework.web.reactive.function.client.WebClientResponseException$InternalServerError
-          - org.springframework.web.reactive.function.client.WebClientResponseException$ServiceUnavailable
-          - java.util.concurrent.TimeoutException
-  circuitbreaker:
-    instances:
-      modelService:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
-        permitted-number-of-calls-in-half-open-state: 3
-        register-health-indicator: true
 
 # Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,circuitbreakers
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
-  health:
-    circuitbreakers:
-      enabled: true
 
 # SpringDoc / Swagger
 springdoc:
