@@ -1,6 +1,6 @@
 package com.safeops.backend.health;
 
-import com.safeops.backend.service.ModelClientService;
+import com.safeops.backend.service.ModelProxyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
@@ -14,7 +14,7 @@ import java.util.Map;
 @Slf4j
 public class ModelServiceHealthIndicator implements HealthIndicator {
 
-    private final ModelClientService modelClientService;
+    private final ModelProxyService modelClientService;
 
     @Override
     public Health health() {

@@ -26,9 +26,9 @@ An enterprise-grade backend for the **SafeOps AI** industrial safety platform, c
 └───────────────────────────┬─────────────────────────────────────┘
                             │
               ┌─────────────┼──────────────┐
-              ▼             ▼              ▼
-         PostgreSQL       Redis        ChromaDB
-          (Data)         (Cache)       (Vectors)
+              ▼                            ▼
+         PostgreSQL                    ChromaDB
+          (Data)                      (Vectors)
 ```
 
 ## Quick Start
@@ -50,13 +50,12 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-This starts 4 services:
+This starts 3 services:
 | Service | Port | Description |
 |---|---|---|
 | `backend` | 8080 | Spring Boot API (public-facing) |
 | `model-service` | 8000 | FastAPI model service (internal) |
 | `postgres` | 5432 | PostgreSQL database |
-| `redis` | 6379 | Redis cache |
 
 ### 3. Verify Health
 
@@ -129,7 +128,7 @@ docker exec safeops-model-service python -m scripts.seed_rag
 │   └── requirements.txt
 ├── backend/                # Spring Boot 3.x (Java 21)
 │   ├── src/main/java/com/safeops/backend/
-│   │   ├── config/         # Security, WebClient, Redis, OpenAPI
+│   │   ├── config/         # Security, WebClient, OpenAPI
 │   │   ├── controller/     # REST controllers
 │   │   ├── service/        # Business logic
 │   │   ├── dto/            # Request/Response DTOs
@@ -140,7 +139,7 @@ docker exec safeops-model-service python -m scripts.seed_rag
 │   │   └── health/         # Custom health indicators
 │   ├── src/main/resources/
 │   │   ├── application.yml # Main config
-│   │   └── db/migration/   # Flyway SQL migrations
+│   │   └── db/migration/   # Database migrations
 │   ├── Dockerfile
 │   └── pom.xml
 ├── docker-compose.yml
@@ -153,9 +152,6 @@ docker exec safeops-model-service python -m scripts.seed_rag
 - **JWT Authentication** with refresh token rotation
 - **Role-Based Access Control** (USER / ADMIN)
 - **Async Job Pattern** for long-running AI analysis (submit → poll)
-- **Circuit Breaker + Retry** (Resilience4j) for model service calls
-- **Redis Caching** for completed analysis results
-- **Flyway Migrations** for versioned database schema
 - **Actuator Health Checks** with custom model service health indicator
 - **Swagger UI** with grouped API documentation
 - **Structured Logging** with SLF4J/Logback
