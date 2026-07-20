@@ -96,6 +96,30 @@ public class SensorSimulator implements SensorSimulatorControl {
         }
     }
 
+    @Scheduled(fixedDelay = 10000)
+    public synchronized void rotateSimulationMode() {
+        switch (simulationMode) {
+            case "NORMAL" -> {
+                simulationMode = "DRIFT";
+                log.info(">>> Rotating simulation mode from NORMAL to DRIFT <<<");
+            }
+            case "DRIFT" -> {
+                simulationMode = "SPIKE";
+                log.info(">>> Rotating simulation mode from DRIFT to SPIKE <<<");
+            }
+            case "SPIKE" -> {
+                simulationMode = "NORMAL";
+                log.info(">>> Rotating simulation mode from SPIKE to NORMAL (resettling baseline) <<<");
+                currentGas = DEFAULT_GAS;
+                currentTemp = DEFAULT_TEMP;
+                currentPressure = DEFAULT_PRESSURE;
+            }
+            default -> {
+                simulationMode = "NORMAL";
+            }
+        }
+    }
+
     private List<Double> nextReading() {
         String mode = simulationMode == null ? "NORMAL" : simulationMode.toUpperCase(Locale.ROOT);
 
