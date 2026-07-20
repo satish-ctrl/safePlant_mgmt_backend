@@ -31,7 +31,7 @@ safeops:
     base-url: http://${MODEL_SERVICE_HOST:localhost}:${MODEL_SERVICE_PORT:8000}
     timeout-seconds: 15
   safety-engine:
-    base-url: ${SAFETY_ENGINE_BASE_URL:https://monkey3770-safeops-ai-engine.hf.space}
+    base-url: ${SAFETY_ENGINE_BASE_URL:https://monkey3770-safeops-ai-engine.hf.space/gradio_api}
     timeout-seconds: ${SAFETY_ENGINE_TIMEOUT_SECONDS:20}
   simulator:
     fixed-delay-ms: ${SENSOR_SIMULATOR_FIXED_DELAY_MS:5000}
