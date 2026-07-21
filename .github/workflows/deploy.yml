@@ -37,31 +37,28 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i myIp.pem ubuntu@$EC2_IP_ADDRESS "export GIT_REPO='$GIT_REPO'; bash -s" << 'EOF'
           set -e
 
-          # Set non-interactive debian frontend
-          export DEBIAN_FRONTEND=noninteractive
-
           # Install Git if missing
           if ! command -v git >/dev/null 2>&1; then
-            sudo -E apt-get update
-            sudo -E apt-get install -y --no-install-recommends git
+            sudo apt update
+            sudo apt install -y git
           fi
 
-          # Install Java Development Kit (JDK 17 Headless) if missing (required to compile)
+          # Install Java Development Kit (JDK 17) if missing (required to compile)
           if ! command -v java >/dev/null 2>&1; then
-            sudo -E apt-get update
-            sudo -E apt-get install -y --no-install-recommends openjdk-17-jdk-headless
+            sudo apt update
+            sudo apt install -y openjdk-17-jdk
           fi
 
           # Install Maven if missing (required to build)
           if ! command -v mvn >/dev/null 2>&1; then
-            sudo -E apt-get update
-            sudo -E apt-get install -y --no-install-recommends maven
+            sudo apt update
+            sudo apt install -y maven
           fi
 
           # Install Node.js & PM2 if missing (PM2 is used to manage the process)
           if ! command -v node >/dev/null 2>&1; then
             curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-            sudo -E apt-get install -y --no-install-recommends nodejs
+            sudo apt install -y nodejs
           fi
           if ! command -v pm2 >/dev/null 2>&1; then
             sudo npm install -g pm2
@@ -104,3 +101,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: rm -f myIp.pem
+# mnf
