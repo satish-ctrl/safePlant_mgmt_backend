@@ -33,22 +33,19 @@ public class ScenarioController {
             case "VIZAG_2025" -> {
                 modeRequest.setZoneId("ZONE_3");
                 modeRequest.setSimulationMode("SPIKE");
-                modeRequest.setShiftRiskFactor(0.2);
             }
             case "HPCL_2013" -> {
-                modeRequest.setZoneId("ZONE_2");
+                modeRequest.setZoneId("ZONE_3");
                 modeRequest.setSimulationMode("DRIFT");
-                modeRequest.setShiftRiskFactor(0.15);
+
             }
             case "BHOPAL_OVERPRESSURE" -> {
-                modeRequest.setZoneId("ZONE_1");
+                modeRequest.setZoneId("ZONE_3");
                 modeRequest.setSimulationMode("SPIKE");
-                modeRequest.setShiftRiskFactor(0.3);
             }
             default -> {
                 modeRequest.setZoneId("ZONE_3");
                 modeRequest.setSimulationMode("NORMAL");
-                modeRequest.setShiftRiskFactor(0.1);
             }
         }
 
