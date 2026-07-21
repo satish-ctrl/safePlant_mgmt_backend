@@ -33,3 +33,9 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
+
+# Video Analytics & YOLO models
+*.pt
+yolov8n.pt
+snapshots/
+scripts/

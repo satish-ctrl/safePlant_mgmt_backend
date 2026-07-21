@@ -128,6 +128,30 @@
         "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
         "url": { "raw": "{{baseUrl}}/api/v1/admin/metrics", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","metrics"] }
       }
+    },
+    {
+      "name": "Actuator - Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] }
+      }
+    },
+    {
+      "name": "Swagger - OpenAPI Docs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/v3/api-docs", "host": ["{{baseUrl}}"], "path": ["v3","api-docs"] }
+      }
+    },
+    {
+      "name": "Swagger - UI HTML",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/swagger-ui.html", "host": ["{{baseUrl}}"], "path": ["swagger-ui.html"] }
+      }
     }
   ]
 }
