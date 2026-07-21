@@ -10,26 +10,32 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class SafeOpsBackendApplication {
 
     public static void main(String[] args) {
-        // Try to load .env from the current directory, falling back to the parent directory if needed
-        Dotenv dotenv = Dotenv.configure()
-            .directory("./")
-            .ignoreIfMalformed()
-            .ignoreIfMissing()
-            .load();
+        // Find the .env file path safely to avoid directories triggering IOException
+        java.nio.file.Path envPath = java.nio.file.Paths.get("./.env");
+        String dotenvDir = null;
 
-        if (dotenv.get("JWT_SECRET") == null) {
-            dotenv = Dotenv.configure()
-                .directory("../")
+        if (java.nio.file.Files.isRegularFile(envPath)) {
+            dotenvDir = "./";
+        } else {
+            envPath = java.nio.file.Paths.get("../.env");
+            if (java.nio.file.Files.isRegularFile(envPath)) {
+                dotenvDir = "../";
+            }
+        }
+
+        if (dotenvDir != null) {
+            Dotenv dotenv = Dotenv.configure()
+                .directory(dotenvDir)
                 .ignoreIfMalformed()
                 .ignoreIfMissing()
                 .load();
-        }
 
-        dotenv.entries().forEach(entry -> {
-            if (System.getProperty(entry.getKey()) == null && System.getenv(entry.getKey()) == null) {
-                System.setProperty(entry.getKey(), entry.getValue());
-            }
-        });
+            dotenv.entries().forEach(entry -> {
+                if (System.getProperty(entry.getKey()) == null && System.getenv(entry.getKey()) == null) {
+                    System.setProperty(entry.getKey(), entry.getValue());
+                }
+            });
+        }
 
         SpringApplication.run(SafeOpsBackendApplication.class, args);
     }
