@@ -1,14 +1,17 @@
 server:
   port: 8080
 
+springdotenv:
+  directory: ../
+
 spring:
   application:
     name: safeops-backend
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:safeOps_DB}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:Shikha@123}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -28,15 +31,15 @@ spring:
 # SafeOps custom config
 safeops:
   model-service:
-    base-url: http://${MODEL_SERVICE_HOST:localhost}:${MODEL_SERVICE_PORT:8000}
+    base-url: http://${MODEL_SERVICE_HOST}:${MODEL_SERVICE_PORT}
     timeout-seconds: 15
   safety-engine:
-    base-url: ${SAFETY_ENGINE_BASE_URL:https://monkey3770-safeops-ai-engine.hf.space/gradio_api}
-    timeout-seconds: ${SAFETY_ENGINE_TIMEOUT_SECONDS:20}
+    base-url: ${SAFETY_ENGINE_BASE_URL}
+    timeout-seconds: ${SAFETY_ENGINE_TIMEOUT_SECONDS}
   simulator:
-    fixed-delay-ms: ${SENSOR_SIMULATOR_FIXED_DELAY_MS:5000}
+    fixed-delay-ms: ${SENSOR_SIMULATOR_FIXED_DELAY_MS}
   jwt:
-    secret: ${JWT_SECRET:dGhpcyBpcyBhIHZlcnkgc2VjcmV0IGtleSBmb3IgSldUIHRva2VucyBpbiBTYWZlT3BzIEFJIGJhY2tlbmQ=}
+    secret: ${JWT_SECRET}
     access-token-expiration-ms: 3600000    # 1 hour
     refresh-token-expiration-ms: 86400000  # 24 hours
 
