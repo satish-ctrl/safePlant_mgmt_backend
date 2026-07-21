@@ -77,6 +77,9 @@ jobs:
 
           cd /home/ubuntu/safePlant_mgmt_backend
 
+          # Reset local changes to tracked files (e.g. target classes) before pulling
+          git reset --hard HEAD
+
           # Pull latest changes
           git fetch origin
           git checkout main
