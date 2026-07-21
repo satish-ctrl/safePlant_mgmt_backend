@@ -11,3 +11,9 @@ src/test/
 # Local environment variables file
 .env
 
+backend/target/
+target/
+*.class
+.idea/
+*.iml
+
