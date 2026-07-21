@@ -34,7 +34,7 @@ jobs:
           echo "$EC2_SSH_KEY" > myIp.pem
           chmod 400 myIp.pem
 
-          ssh -o StrictHostKeyChecking=no -i myIp.pem ubuntu@$EC2_IP_ADDRESS << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i myIp.pem ubuntu@$EC2_IP_ADDRESS "export GIT_REPO='$GIT_REPO'; bash -s" << 'EOF'
           set -e
 
           # Install Git if missing
