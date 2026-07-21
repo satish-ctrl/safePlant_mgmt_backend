@@ -15,6 +15,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
@@ -23,6 +25,20 @@ public class SafetyService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final Duration requestTimeout;
+    private final Map<String, Map<String, Object>> latestSafetyEvaluations = new ConcurrentHashMap<>();
+
+    public void cacheLatestEvaluation(String zoneId, Map<String, Object> evaluation) {
+        if (zoneId != null && evaluation != null) {
+            latestSafetyEvaluations.put(zoneId, evaluation);
+        }
+    }
+
+    public Optional<Map<String, Object>> getLatestEvaluation(String zoneId) {
+        if (zoneId == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(latestSafetyEvaluations.get(zoneId));
+    }
 
     public SafetyService(WebClient.Builder webClientBuilder,
                          ObjectMapper objectMapper,
