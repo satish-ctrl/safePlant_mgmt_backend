@@ -10,5 +10,8 @@ public class SimulatorModeRequest {
 
     @NotBlank(message = "Simulation mode is required")
     private String simulationMode;
+
+    @NotBlank(message = "Zone ID is required")
+    private String zoneId;
 }
 
