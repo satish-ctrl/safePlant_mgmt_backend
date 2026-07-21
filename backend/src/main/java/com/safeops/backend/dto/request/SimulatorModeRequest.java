@@ -10,11 +10,5 @@ public class SimulatorModeRequest {
 
     @NotBlank(message = "Simulation mode is required")
     private String simulationMode;
-
-    private String zoneId;
-
-    @DecimalMin(value = "0.0")
-    @DecimalMax(value = "1.0")
-    private Double shiftRiskFactor;
 }
 
