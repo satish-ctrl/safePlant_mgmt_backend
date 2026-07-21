@@ -7,6 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.safeops.backend.entity.SafetyEvaluationLog;
+import com.safeops.backend.repository.SafetyEvaluationLogRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 import java.time.Instant;
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -27,6 +31,8 @@ public class SensorSimulator implements SensorSimulatorControl {
     private static final double DEFAULT_PRESSURE = 1.2;
 
     private final SafetyService safetyService;
+    private final SafetyEvaluationLogRepository safetyEvaluationLogRepository;
+    private final SimpMessagingTemplate messagingTemplate;
     private final Random random = new Random();
     private final Deque<List<Double>> sensorHistory = new ArrayDeque<>();
 
@@ -38,8 +44,12 @@ public class SensorSimulator implements SensorSimulatorControl {
     private double currentPressure = DEFAULT_PRESSURE;
     private Instant lastReadingAt;
 
-    public SensorSimulator(SafetyService safetyService) {
+    public SensorSimulator(SafetyService safetyService,
+                           SafetyEvaluationLogRepository safetyEvaluationLogRepository,
+                           SimpMessagingTemplate messagingTemplate) {
         this.safetyService = safetyService;
+        this.safetyEvaluationLogRepository = safetyEvaluationLogRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public synchronized SimulatorStatusResponse updateConfiguration(SimulatorModeRequest request) {
@@ -90,7 +100,48 @@ public class SensorSimulator implements SensorSimulatorControl {
             Map<String, Object> result = safetyService.evaluateSafety(payload)
                     .timeout(Duration.ofSeconds(20))
                     .block();
+            
             log.info("Safety evaluation result for {}: {}", zoneId, result);
+
+            if (result != null) {
+                // 1. Store in the in-memory cache
+                safetyService.cacheLatestEvaluation(zoneId, result);
+
+                // 2. Broadcast via WebSocket to subscribers
+                messagingTemplate.convertAndSend("/topic/safety/" + zoneId, result);
+                log.debug("Broadcasted safety evaluation for {} via WebSocket", zoneId);
+
+                // 3. Extract metrics and conditionally persist high-risk evaluations
+                Double riskScore = null;
+                String severity = "NORMAL";
+                String actionTaken = null;
+
+                if (result.get("action_taken") != null) {
+                    actionTaken = result.get("action_taken").toString();
+                }
+
+                Object riskFusionObj = result.get("risk_fusion_out");
+                if (riskFusionObj instanceof Map<?, ?> riskFusionMap) {
+                    if (riskFusionMap.get("score") instanceof Number num) {
+                        riskScore = num.doubleValue();
+                    }
+                    if (riskFusionMap.get("severity") != null) {
+                        severity = riskFusionMap.get("severity").toString();
+                    }
+                }
+
+                if ("DISPATCH_ALERT".equalsIgnoreCase(actionTaken) || "HIGH".equalsIgnoreCase(severity) || "CRITICAL".equalsIgnoreCase(severity)) {
+                    SafetyEvaluationLog logEntry = SafetyEvaluationLog.builder()
+                            .zoneId(zoneId)
+                            .riskScore(riskScore)
+                            .severity(severity)
+                            .actionTaken(actionTaken)
+                            .rawResult(result)
+                            .build();
+                    safetyEvaluationLogRepository.save(logEntry);
+                    log.info("Persisted high-risk safety evaluation log to database for {}", zoneId);
+                }
+            }
         } catch (Exception e) {
             log.warn("Safety evaluation failed for {}: {}", zoneId, e.getMessage());
         }
