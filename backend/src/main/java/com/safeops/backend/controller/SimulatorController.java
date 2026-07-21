@@ -19,13 +19,6 @@ public class SimulatorController {
 
     private final SensorSimulatorControl sensorSimulator;
 
-    @GetMapping("/mode")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @Operation(summary = "Get the current simulator mode and runtime snapshot")
-    public ResponseEntity<SimulatorStatusResponse> getMode() {
-        return ResponseEntity.ok(sensorSimulator.getStatus());
-    }
-
     @PutMapping("/mode")
     @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(summary = "Update the simulator mode, zone, and risk factor")
@@ -33,5 +26,3 @@ public class SimulatorController {
         return ResponseEntity.ok(sensorSimulator.updateConfiguration(request));
     }
 }
-
-

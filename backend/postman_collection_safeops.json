@@ -48,55 +48,6 @@
       }
     },
     {
-      "name": "Analysis - Submit",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"zoneId\": \"ZONE_3\",\n  \"shiftRiskFactor\": 0.1,\n  \"sensorRawHistory\": [[18.0,28.0,1.2]],\n  \"cvRawFrame\": {\"zone_id\": \"ZONE_3\", \"workers_detected\": 2, \"violations\": []},\n  \"activePermitsRaw\": []\n}"
-        },
-        "url": { "raw": "{{baseUrl}}/api/v1/analysis/submit", "host": ["{{baseUrl}}"], "path": ["api","v1","analysis","submit"] }
-      }
-    },
-    {
-      "name": "Analysis - Status",
-      "request": {
-        "method": "GET",
-        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
-        "url": { "raw": "{{baseUrl}}/api/v1/analysis/status/{{jobId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","analysis","status","{{jobId}}"] }
-      }
-    },
-    {
-      "name": "Sensor - Anomaly",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
-        "body": { "mode": "raw", "raw": "{\n  \"readings\": [[32.0, 29.0, 1.2]]\n}" },
-        "url": { "raw": "{{baseUrl}}/api/v1/sensor/anomaly", "host": ["{{baseUrl}}"], "path": ["api","v1","sensor","anomaly"] }
-      }
-    },
-    {
-      "name": "Permits - Check",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
-        "body": { "mode": "raw", "raw": "{\n  \"permits\": [{\"id\": \"P1\", \"zone\": \"ZONE_3\"}],\n  \"currentTime\": \"2026-07-20T12:00:00Z\",\n  \"currentGas\": 0.0\n}" },
-        "url": { "raw": "{{baseUrl}}/api/v1/permits/check", "host": ["{{baseUrl}}"], "path": ["api","v1","permits","check"] }
-      }
-    },
-    {
-      "name": "Simulator - Get Mode",
-      "request": {
-        "method": "GET",
-        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
-        "url": { "raw": "{{baseUrl}}/api/v1/simulator/mode", "host": ["{{baseUrl}}"], "path": ["api","v1","simulator","mode"] }
-      }
-    },
-    {
       "name": "Simulator - Update Mode",
       "request": {
         "method": "PUT",

@@ -18,10 +18,9 @@ This document outlines the **exact** API routes implemented in the `safePlant_mg
 
 ## 5. Simulator
 
-| Route                    | Method | Description                                  | Access | Payload/Parameters                            |
-| :----------------------- | :----: | :------------------------------------------- | :----: | :-------------------------------------------- |
-| `/api/v1/simulator/mode` | `GET`  | Get current simulation mode and active zone. |  Auth  | None                                          |
-| `/api/v1/simulator/mode` | `PUT`  | Update the simulator's configuration.        | Admin  | `simulationMode`, `zoneId`, `shiftRiskFactor` |
+| Route                    | Method | Description                           | Access | Payload/Parameters |
+| :----------------------- | :----: | :------------------------------------ | :----: | :----------------- |
+| `/api/v1/simulator/mode` | `PUT`  | Update the simulator's configuration. | Admin  | `simulationMode`   |
 
 ---
 
