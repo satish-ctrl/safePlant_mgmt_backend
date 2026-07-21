@@ -80,10 +80,6 @@ public class SensorSimulator implements SensorSimulatorControl {
         }
 
         simulationMode = requestedMode;
-        if (request.getShiftRiskFactor() != null) {
-            shiftRiskFactor = request.getShiftRiskFactor();
-        }
-
         return getStatus();
     }
 
@@ -91,7 +87,6 @@ public class SensorSimulator implements SensorSimulatorControl {
         return SimulatorStatusResponse.builder()
                 .simulationMode(simulationMode)
                 .zoneId(zoneId)
-                .shiftRiskFactor(shiftRiskFactor)
                 .bufferedReadings(sensorHistory.size())
                 .sensorId(buildSensorId("GAS"))
                 .latestReading(sensorHistory.peekLast() == null ? null : new ArrayList<>(sensorHistory.peekLast()))
