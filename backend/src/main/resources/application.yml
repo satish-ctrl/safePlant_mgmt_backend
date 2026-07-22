@@ -42,6 +42,10 @@ safeops:
     secret: ${JWT_SECRET}
     access-token-expiration-ms: 3600000    # 1 hour
     refresh-token-expiration-ms: 86400000  # 24 hours
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_FROM_NUMBER:}
 
 # Actuator
 management:

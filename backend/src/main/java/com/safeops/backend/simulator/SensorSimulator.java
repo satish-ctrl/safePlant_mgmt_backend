@@ -5,7 +5,11 @@ import com.safeops.backend.dto.request.SimulatorModeRequest;
 import com.safeops.backend.dto.response.SimulatorStatusResponse;
 import com.safeops.backend.entity.SafetyEvaluationLog;
 import com.safeops.backend.repository.SafetyEvaluationLogRepository;
+import com.safeops.backend.repository.UserRepository;
 import com.safeops.backend.service.SafetyService;
+import com.safeops.backend.service.SmsService;
+import com.safeops.backend.entity.Role;
+import com.safeops.backend.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,6 +32,8 @@ public class SensorSimulator implements SensorSimulatorControl {
     private final SafetyService safetyService;
     private final SafetyEvaluationLogRepository safetyEvaluationLogRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
+    private final SmsService smsService;
     private final Random random = new Random();
     private final Deque<List<Double>> sensorHistory = new ArrayDeque<>();
 
@@ -58,10 +64,14 @@ public class SensorSimulator implements SensorSimulatorControl {
 
     public SensorSimulator(SafetyService safetyService,
                            SafetyEvaluationLogRepository safetyEvaluationLogRepository,
-                           SimpMessagingTemplate messagingTemplate) {
+                           SimpMessagingTemplate messagingTemplate,
+                           UserRepository userRepository,
+                           SmsService smsService) {
         this.safetyService = safetyService;
         this.safetyEvaluationLogRepository = safetyEvaluationLogRepository;
         this.messagingTemplate = messagingTemplate;
+        this.userRepository = userRepository;
+        this.smsService = smsService;
     }
 
     // 2. Public method to register live CCTV detection frame from CvController
@@ -122,6 +132,137 @@ public class SensorSimulator implements SensorSimulatorControl {
                 safetyService.cacheLatestEvaluation(zoneId, result);
                 messagingTemplate.convertAndSend("/topic/safety/" + zoneId, result);
 
+                // Send Twilio alert if simulationMode is SPIKE or DRIFT and action is DISPATCH_ALERT
+                if ("SPIKE".equalsIgnoreCase(simulationMode) || "DRIFT".equalsIgnoreCase(simulationMode)) {
+                    Object actionObj = result.get("action_taken");
+                    String actionTakenStr = actionObj != null ? actionObj.toString() : "";
+
+                    if ("DISPATCH_ALERT".equalsIgnoreCase(actionTakenStr) || "LOG_WARNING".equalsIgnoreCase(actionTakenStr)) {
+                        log.info("Simulator condition met ({} in {} mode). Fetching ADMIN users to send SMS alert.", actionTakenStr, simulationMode);
+                        List<User> admins = userRepository.findByRole(Role.ADMIN);
+
+                        // Extract risk information
+                        String severity = "NORMAL";
+                        double riskScorePct = 0.0;
+                        Object riskFusionObj = result.get("risk_fusion_out");
+                        if (riskFusionObj instanceof Map<?, ?> riskFusionMap) {
+                            Object sevVal = riskFusionMap.get("severity");
+                            if (sevVal != null) {
+                                severity = sevVal.toString();
+                            }
+                            Object scoreVal = riskFusionMap.get("score");
+                            if (scoreVal instanceof Number num) {
+                                riskScorePct = num.doubleValue() * 100.0;
+                            }
+                        }
+
+                        // Extract Gas Spike info
+                        double gasVal = 0.0;
+                        double gasBaseline = 0.0;
+                        String gasTrend = "STABLE";
+                        int breachMin = 0;
+                        Object anomalyObj = result.get("sensor_anomaly_out");
+                        if (anomalyObj instanceof Map<?, ?> anomalyMap) {
+                            Object val = anomalyMap.get("current_value");
+                            if (val instanceof Number num) gasVal = num.doubleValue();
+                            Object base = anomalyMap.get("normal_baseline");
+                            if (base instanceof Number num) gasBaseline = num.doubleValue();
+                            Object tr = anomalyMap.get("trend");
+                            if (tr != null) gasTrend = tr.toString();
+                            Object br = anomalyMap.get("predicted_threshold_breach_minutes");
+                            if (br instanceof Number num) breachMin = num.intValue();
+                        }
+
+                        // Extract Conflict info
+                        String conflictDesc = "None";
+                        Object permitIntelObj = result.get("permit_intel_out");
+                        if (permitIntelObj instanceof Map<?, ?> permitIntelMap) {
+                            Object conflictsVal = permitIntelMap.get("conflicts");
+                            if (conflictsVal instanceof Collection<?> conflictsColl && !conflictsColl.isEmpty()) {
+                                Object firstConflict = conflictsColl.iterator().next();
+                                if (firstConflict instanceof Map<?, ?> conflictMap) {
+                                    Object descVal = conflictMap.get("risk_description");
+                                    if (descVal != null) conflictDesc = descVal.toString();
+                                }
+                            }
+                        }
+
+                        // Extract PPE Violations
+                        int workers = 0;
+                        StringBuilder ppeBuilder = new StringBuilder();
+                        Object cvSafetyObj = result.get("cv_safety_out");
+                        if (cvSafetyObj instanceof Map<?, ?> cvSafetyMap) {
+                            Object wVal = cvSafetyMap.get("workers_detected");
+                            if (wVal instanceof Number num) workers = num.intValue();
+                            Object violationsVal = cvSafetyMap.get("violations");
+                            if (violationsVal instanceof Collection<?> violationsColl) {
+                                for (Object viol : violationsColl) {
+                                    if (viol instanceof Map<?, ?> violMap) {
+                                        Object wId = violMap.get("worker_id");
+                                        Object vType = violMap.get("violation_type");
+                                        if (wId != null && vType != null) {
+                                            if (ppeBuilder.length() > 0) ppeBuilder.append(", ");
+                                            ppeBuilder.append(String.format("%s: %s", wId, vType));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        String ppeViolations = ppeBuilder.length() > 0 ? ppeBuilder.toString() : "None";
+
+                        // Extract Recommended Actions (first 2 actions to stay concise)
+                        StringBuilder actionsBuilder = new StringBuilder();
+                        String incidentDesc = "None";
+                        Object ragComplianceObj = result.get("rag_compliance_out");
+                        if (ragComplianceObj instanceof Map<?, ?> ragComplianceMap) {
+                            // Extract description from similar_incidents
+                            Object incidentsVal = ragComplianceMap.get("similar_incidents");
+                            if (incidentsVal instanceof Collection<?> incidentsColl && !incidentsColl.isEmpty()) {
+                                Object firstIncident = incidentsColl.iterator().next();
+                                if (firstIncident instanceof Map<?, ?> incidentMap) {
+                                    Object descVal = incidentMap.get("description");
+                                    if (descVal != null) {
+                                        incidentDesc = descVal.toString();
+                                    }
+                                }
+                            }
+
+                            // Extract recommended actions
+                            Object recActionsObj = ragComplianceMap.get("recommended_actions");
+                            if (recActionsObj instanceof Collection<?> recActionsColl) {
+                                int count = 0;
+                                for (Object act : recActionsColl) {
+                                    if (act != null && count < 2) {
+                                        actionsBuilder.append("\n- ").append(act.toString());
+                                        count++;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Construct the formatted message (fully dynamic using response messages)
+                        String alertMsg = String.format(
+                                "🚨SafeOps Alert: %s (%s Mode)\n" +
+                                "Risk: %s (%.1f%%)\n" +
+                                "Incident: %s%s",
+                                zoneId, simulationMode.toUpperCase(),
+                                severity, riskScorePct,
+                                incidentDesc,
+                                actionsBuilder.toString()
+                        );
+
+                        if (admins != null && !admins.isEmpty()) {
+                            for (User admin : admins) {
+                                if (admin.getPhoneNumber() != null && !admin.getPhoneNumber().isBlank()) {
+                                    smsService.sendSms(admin.getPhoneNumber(), alertMsg);
+                                }
+                            }
+                        } else {
+                            log.warn("No ADMIN users with phone numbers found to send alert in {} mode.", simulationMode);
+                        }
+                    }
+                }
+
                 Double riskScore = null;
                 String severity = "NORMAL";
                 String actionTaken = result.get("action_taken") != null ? result.get("action_taken").toString() : null;
@@ -165,8 +306,8 @@ public class SensorSimulator implements SensorSimulatorControl {
         switch (mode) {
             case "DRIFT" -> {
                 currentGas += 0.4;
-                currentTemp += 0.05;
-                currentPressure += 0.005;
+                currentTemp += 0.5;
+                currentPressure += 0.5;
             }
             case "SPIKE" -> {
                 currentGas = 38.0 + (random.nextDouble() * 1.5 - 0.75);
