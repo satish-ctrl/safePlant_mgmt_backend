@@ -20,5 +20,8 @@ public class RegisterRequest {
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
 
+    @Size(max = 20, message = "Phone number must be at most 20 characters")
+    private String phoneNumber;
+
     private Role role;
 }
